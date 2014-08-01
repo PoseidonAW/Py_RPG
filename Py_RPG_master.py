@@ -4,14 +4,18 @@ from ctypes import *
 # Create or open an existing SQLite DB
 import sqlite3
 
+import playerdata
+import genericMessaging
+
+
 db = sqlite3.connect('awrpg.db')
 print "Opened database successfully"
 
 cursor = db.cursor()
-cursor.execute('''
-CREATE TABLE players(id INTEGER PRIMARY KEY, name TEXT, health INTEGER, mana INTEGER, race TEXT)
-''')
-db.commit()
+# cursor.execute('''
+#CREATE TABLE players(id INTEGER PRIMARY KEY, name TEXT, health INTEGER, mana INTEGER, race TEXT)
+# ''')
+# db.commit()
 print "Chanes to awrpg db committed."
 
 
@@ -78,7 +82,7 @@ def player_registration(player_name, player_session):
         db.commit()
         print 'Player added: ' + player
         aw.aw_say("Welcome to the club, " + player)
-        py_hud_generic(player_session, "Health: {}, Mana: {}, Race: {}".format(health, mana, race), 1000,
+        genericMessaging.py_hud_generic(player_session, "Health: {}, Mana: {}, Race: {}".format(health, mana, race), 1000,
                         hud_origin, location_x, location_y)
 
 def py_chat():
@@ -99,7 +103,7 @@ def update_stats(player_session):
         health = results[1]
         mana = results[2]
         race = results[3]
-        py_hud_generic(player_session, "Health: {}, Mana: {}, Race: {}".format(health, mana, race), 1000,
+        genericMessaging.py_hud_generic(player_session, "Health: {}, Mana: {}, Race: {}".format(health, mana, race), 1000,
                         hud_origin, location_x, location_y)
     else:
         pass
@@ -118,7 +122,7 @@ def py_hud_click():
 
     # If the player clicks their Stats HUD, send them a message
     if hud_id == 1000:
-        py_console(session_number,
+        genericMessaging.py_console(session_number,
                    "{} that's your stats HUD - You can't close it! (but maybe I'll add that as a feature =-)".format(
                        session_name))
         return
@@ -133,30 +137,6 @@ def py_hud_click():
     return
 
 
-def py_hud_generic(session, message, hud_id, hud_origin, location_x, location_y):
-    """
-
-    :rtype : Creates a HUD for the noted session
-    """
-    av_session = session
-    aw.aw_int_set(422, 0)
-    aw.aw_string_set(430, message)  # HUD Element Text and string
-    aw.aw_int_set(423, hud_id)  # HUD Element ID
-    aw.aw_int_set(428, 1)  # HUD Element Z
-    aw.aw_int_set(424, av_session)  # Session Information
-    aw.aw_int_set(427, location_y)  # HUD Element Y
-    aw.aw_int_set(426, location_x)  # HUD Element X
-    aw.aw_int_set(429, 0x0001)  # HUD_Element_Flags
-    aw.aw_int_set(425, hud_origin)  # HUD Element Origin
-    aw.aw_int_set(433, 300)  # HUD ELEMENT SIZE X
-    aw.aw_int_set(434, 300)  # HUD ELEMENT SIZE Y
-    aw.aw_int_set(431, 0xFFFF00)  # HUD COLOR
-    aw.aw_float_set(432, c_float(1))
-    aw.aw_hud_create()
-    rc = aw.aw_hud_create()
-    print rc
-    return
-
 # Handle player damage
 def damage_player(clicked_session):
     health_reduction = 10
@@ -167,7 +147,7 @@ def damage_player(clicked_session):
 
     # Check the DB to verify the clicked player exists in the DB
     if player_exists:
-        py_console(clicked_session, "{} you just got hit!".format(player_name))
+        genericMessaging.py_console(clicked_session, "{} you just got hit!".format(player_name))
         hud_origin = 0
         location_x = 0
         location_y = 0
@@ -226,78 +206,53 @@ def py_hud_damage(session):
 def py_object_bump():
     print "Someone bumped something"
     session = aw.aw_int(206)
-    py_console(session, 'You bumped something')
+    genericMessaging.py_console(session, 'You bumped something')
 
 
-def check_player_status(av_session):
-    # Check to see if the new user exists in the player database
-    player_name = session_dict[av_session]
-    player_session = av_session
-    cursor.execute('''SELECT name FROM players WHERE name = ?''', (player_name,))
-    player_exists = cursor.fetchone()
+def py_avatar_add():
+    player_session = aw.aw_int(206)
+    player_name = aw.aw_string(207)
 
-    if player_exists:
-        py_console(player_session, "Welcome back to the game, {}".format(player_name))
+    #Store the player's name and session in a dictionary
+    session_dict[player_session] = player_name
+    print session_dict
+
+    # Check to see if the player has an account
+    player_check = playerdata.player_check(player_name)
+    if player_check:
+        genericMessaging.py_console(player_session, "Welcome back to the game, {}".format(player_name))
         print "{} has returned".format(player_name)
+        cursor.execute('''SELECT name, health, mana, race FROM players WHERE name = ?''', (player_name,))
+        results = cursor.fetchone()
+
+        # Create a HUD to display player stats
         hud_origin = 0
         location_x = 0
         location_y = 0
-        cursor.execute('''SELECT name, health, mana, race FROM players WHERE name = ?''', (player_name,))
-        results = cursor.fetchone()
-        if results is not None:
-            health = results[1]
-            mana = results[2]
-            race = results[3]
-            py_hud_generic(player_session, "Health: {}, Mana: {}, Race: {}".format(health, mana, race), 1000,
-                           hud_origin, location_x, location_y)
-        else:
-            pass
+        health = results[1]
+        mana = results[2]
+        race = results[3]
+        genericMessaging.py_hud_generic(player_session, "Health: {}, Mana: {}, Race: {}".format(health, mana, race), 1000,
+                        hud_origin, location_x, location_y)
 
+    # If the player does not exist, invite them to the game
     else:
         hud_origin = 4
         location_x = -100
         location_y = -100
-        py_hud_generic(player_session, "Register", 1001, hud_origin, location_x, location_y)
+        genericMessaging.py_hud_generic(player_session, "Register", 1001, hud_origin, location_x, location_y)
         print "Inviting {} to the game".format(player_name)
 
-
-def py_avatar_add():
-    av_session = aw.aw_int(206)
-    player_name = aw.aw_string(207)
-    session_dict[av_session] = player_name
-
-    print player_name
-    print av_session
-    print session_dict
-
     # Sends users a message when they first enter the world
-    py_console(av_session, "You've arrived inside Jim's lab. Expect chaos.")
-    # Check to see if the person has an account
-    check_player_status(av_session)
-    # py_console(player_session, "It looks like you're new around here, {}. If you'd like "
-    #"to join the game, simply say 'Register'" .format(player_name))
-
+    genericMessaging.py_console(player_session, "You've arrived inside Poseidon's lab. Expect chaos.")
     return
 
 
 def py_avatar_delete():
-    player_name = aw.aw_string(207)
     player_session = aw.aw_int(206)
+    # Remove the player's session and name information from session_dict
     session_dict.pop(player_session)
 
-
-# A generic console message function. Call this inside of other functions as necessary
-def py_console(session, message):
-    target_session = session
-    aw.aw_int_set(329, 255)
-    aw.aw_int_set(330, 0)
-    aw.aw_int_set(331, 0)
-    aw.aw_int_set(332, 1)
-    aw.aw_int_set(333, 1)
-    aw.aw_string_set(334, message)
-    # aw.aw_int_set(206, target_session)
-    aw.aw_console_message(target_session)
-    return
 
 def stat_change(session, stat, amount):
     target_session = session
@@ -337,7 +292,7 @@ def py_object_click():
     session = aw.aw_int(206)
     av_session = aw.aw_int(206)
     if aw.aw_string(240) >= "~mana:":
-        py_console(session, "Here's some mana!")
+        genericMessaging.py_console(session, "Here's some mana!")
         stat = "mana"
         amount = 50
         print "{} is now {}" .format(stat, amount)
@@ -385,7 +340,7 @@ avatar_click = AWEVENT(py_avatar_click)
 aw.aw_event_set(20, avatar_click)
 
 # Console message sent
-console_message = AWEVENT(py_console)
+console_message = AWEVENT(genericMessaging.py_console)
 aw.aw_event_set(29, console_message)
 
 # Object Bump Event
