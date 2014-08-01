@@ -8,11 +8,12 @@ db = sqlite3.connect('awrpg.db')
 print "Opened database successfully"
 
 cursor = db.cursor()
-# cursor.execute('''
-# CREATE TABLE players(id INTEGER PRIMARY KEY, name TEXT, health INTEGER, mana INTEGER, race TEXT)
-# ''')
-# db.commit()
+cursor.execute('''
+CREATE TABLE players(id INTEGER PRIMARY KEY, name TEXT, health INTEGER, mana INTEGER, race TEXT)
+''')
+db.commit()
 print "Chanes to awrpg db committed."
+
 
 aw = CDLL("aw")
 
@@ -29,9 +30,14 @@ AWCALLBACK = CFUNCTYPE(None)
 # Initialize the SDK
 aw.aw_init(100)  # Change this to whatever build number is most current.
 
-
 # Login function
-def login(name, owner, password):
+def login():
+    print "Please enter the bot name: "
+    name = raw_input()
+    print "Please enter your citnumber: "
+    owner = int(raw_input())
+    print "Please enter your PPW: "
+    password = raw_input()
     aw.aw_string_set(0, name)
     aw.aw_int_set(2, owner)
     aw.aw_string_set(3, password)
@@ -49,9 +55,8 @@ session_dict = {}
 time = time.asctime(time.localtime(time.time()))
 
 # Handle Player Registration
-def player_registration(player_name):
+def player_registration(player_name, player_session):
     player = player_name
-
     # Access the DB and determine if the user has a player account
     cursor.execute('''SELECT name FROM players WHERE name = ?''', (player,))
     player_exists = cursor.fetchone()
@@ -61,6 +66,9 @@ def player_registration(player_name):
 
     # If no account exists, create a new DB entry with the player's name
     else:
+        hud_origin = 0
+        location_x = 0
+        location_y = 0
         health = 1000.0
         mana = 250.0
         race = "Human"
@@ -70,6 +78,8 @@ def player_registration(player_name):
         db.commit()
         print 'Player added: ' + player
         aw.aw_say("Welcome to the club, " + player)
+        py_hud_generic(player_session, "Health: {}, Mana: {}, Race: {}".format(health, mana, race), 1000,
+                        hud_origin, location_x, location_y)
 
 def py_chat():
 
@@ -103,7 +113,7 @@ def py_hud_click():
 
     # If the player clicks the "Register" HUD, call player_registration
     if hud_id == 1001:
-        player_registration(session_name)
+        player_registration(session_name, session_number)
         aw.aw_hud_destroy(session_number, hud_id)
 
     # If the player clicks their Stats HUD, send them a message
@@ -184,7 +194,7 @@ def py_avatar_click():
     if combat == 1:
         damage_player(clicked_session) # Damage the player who was clicked
         py_hud_damage(clicked_session) # Activate that damage indicator HUD
-        py_hud_destroy(clicked_session, 001) # Destroy the damage indicator HUD
+
 
 
     else:
@@ -385,8 +395,9 @@ aw.aw_event_set(38, object_bump)
 # Object is clicked
 object_click = AWEVENT(py_object_click)
 aw.aw_event_set(18, object_click)
+
 # Log the bot in
-login("PyBot", 293157, "pass")
+login()
 
 # Enter a world at GZ
 aw.aw_bool_set(328, 1)
