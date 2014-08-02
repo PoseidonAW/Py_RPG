@@ -1,5 +1,6 @@
 # Setup ctypes and bring in the AW DLL for use.
 from ctypes import *
+from playerdata import Character
 
 # Create or open an existing SQLite DB
 import sqlite3
@@ -7,15 +8,15 @@ import sqlite3
 import playerdata
 import genericMessaging
 
-
+session_dict = playerdata.session_dict
 db = sqlite3.connect('awrpg.db')
 print "Opened database successfully"
 
 cursor = db.cursor()
-# cursor.execute('''
-#CREATE TABLE players(id INTEGER PRIMARY KEY, name TEXT, health INTEGER, mana INTEGER, race TEXT)
-# ''')
-# db.commit()
+cursor.execute('''
+CREATE TABLE players(id INTEGER PRIMARY KEY, name TEXT, health INTEGER, mana INTEGER, race TEXT)
+''')
+db.commit()
 print "Chanes to awrpg db committed."
 
 
@@ -54,36 +55,8 @@ bot_owner = "Poseidon"
 
 # Create a dictionary to keep track of names and matching session information
 # Since the SDK is a little fickle.
-session_dict = {}
 
 time = time.asctime(time.localtime(time.time()))
-
-# Handle Player Registration
-def player_registration(player_name, player_session):
-    player = player_name
-    # Access the DB and determine if the user has a player account
-    cursor.execute('''SELECT name FROM players WHERE name = ?''', (player,))
-    player_exists = cursor.fetchone()
-    if player_exists:
-        aw.aw_say("You already have an account")
-        print "You already have an account!"
-
-    # If no account exists, create a new DB entry with the player's name
-    else:
-        hud_origin = 0
-        location_x = 0
-        location_y = 0
-        health = 1000.0
-        mana = 250.0
-        race = "Human"
-
-        cursor.execute('''INSERT INTO players(name, health, mana, race)
-                            VALUES(?,?,?,?)''', (player, health, mana, race))
-        db.commit()
-        print 'Player added: ' + player
-        aw.aw_say("Welcome to the club, " + player)
-        genericMessaging.py_hud_generic(player_session, "Health: {}, Mana: {}, Race: {}".format(health, mana, race), 1000,
-                        hud_origin, location_x, location_y)
 
 def py_chat():
 
@@ -117,8 +90,25 @@ def py_hud_click():
 
     # If the player clicks the "Register" HUD, call player_registration
     if hud_id == 1001:
-        player_registration(session_name, session_number)
         aw.aw_hud_destroy(session_number, hud_id)
+
+        hud_origin = 4
+        human_location_x = 0
+        human_location_y = -100
+        immortal_location_x = -200
+        immortal_location_y = -100
+        genericMessaging.py_hud_generic(session_number, "Human", 2000, hud_origin, human_location_x, human_location_y)
+        genericMessaging.py_hud_generic(session_number, "Immortal", 2001, hud_origin, immortal_location_x, immortal_location_y)
+
+    if hud_id == 2000:
+        playerdata.Character().player_registration(session_number)
+        aw.aw_hud_destroy(session_number, hud_id)
+        aw.aw_hud_destroy(session_number, 2001)
+
+    if hud_id == 2001:
+        playerdata.Immortal().player_registration(session_number)
+        aw.aw_hud_destroy(session_number, hud_id)
+        aw.aw_hud_destroy(session_number, 2000)
 
     # If the player clicks their Stats HUD, send them a message
     if hud_id == 1000:
@@ -214,11 +204,11 @@ def py_avatar_add():
     player_name = aw.aw_string(207)
 
     #Store the player's name and session in a dictionary
-    session_dict[player_session] = player_name
-    print session_dict
+    playerdata.session_dict[player_session] = player_name
+    print playerdata.session_dict
 
     # Check to see if the player has an account
-    player_check = playerdata.player_check(player_name)
+    player_check = playerdata.player_check(player_session)
     if player_check:
         genericMessaging.py_console(player_session, "Welcome back to the game, {}".format(player_name))
         print "{} has returned".format(player_name)
@@ -236,7 +226,7 @@ def py_avatar_add():
                         hud_origin, location_x, location_y)
 
     # If the player does not exist, invite them to the game
-    else:
+    if not player_check:
         hud_origin = 4
         location_x = -100
         location_y = -100
