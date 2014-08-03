@@ -125,29 +125,6 @@ def py_hud_click():
 
     return
 
-
-# Handle player damage
-def damage_player(clicked_session):
-    health_reduction = 10
-    player_name = session_dict[clicked_session]
-
-    cursor.execute('''SELECT name FROM players WHERE name = ?''', (player_name,))
-    player_exists = cursor.fetchone()
-
-    # Check the DB to verify the clicked player exists in the DB
-    if player_exists:
-        genericMessaging.py_console(clicked_session, "{} you just got hit!".format(player_name))
-        cursor.execute('''SELECT name, health, mana, race FROM players WHERE name = ?''', (player_name,))
-        results = cursor.fetchone()
-        if results is not None:
-            stat = "health"
-            amount = health_reduction
-            # print "{} was attacked!" .format(player_name)
-            playerdata.stat_change(clicked_session, stat, amount)
-        else:
-            pass
-
-
 def py_avatar_click():
     av_session = aw.aw_int(206)
     player_name = session_dict[av_session]
@@ -158,7 +135,7 @@ def py_avatar_click():
     combat = 1
 
     if combat == 1:
-        damage_player(clicked_session)  # Damage the player who was clicked
+        playerdata.damage_player(clicked_session)  # Damage the player who was clicked
         py_hud_damage(clicked_session)  # Activate that damage indicator HUD
     else:
         pass

@@ -140,3 +140,25 @@ def update_stats(player_session):
                                         hud_origin, location_x, location_y)
     else:
         pass
+
+
+    # Handle player damage
+def damage_player(clicked_session):
+    health_reduction = 10
+    player_name = session_dict[clicked_session]
+
+    cursor.execute('''SELECT name FROM players WHERE name = ?''', (player_name,))
+    player_exists = cursor.fetchone()
+
+    # Check the DB to verify the clicked player exists in the DB
+    if player_exists:
+        genericMessaging.py_console(clicked_session, "{} you just got hit!".format(player_name))
+        cursor.execute('''SELECT name, health, mana, race FROM players WHERE name = ?''', (player_name,))
+        results = cursor.fetchone()
+        if results is not None:
+            stat = "health"
+            amount = health_reduction
+            # print "{} was attacked!" .format(player_name)
+            stat_change(clicked_session, stat, amount)
+        else:
+            pass
