@@ -22,12 +22,11 @@ def py_console(session, message):
 
 # A generic HUD message function. Call this inside of other functions as necessary
 def py_hud_generic(session, message, hud_id, hud_origin, location_x, location_y):
-    av_session = session
     aw.aw_int_set(422, 0)
     aw.aw_string_set(430, message)  # HUD Element Text and string
     aw.aw_int_set(423, hud_id)  # HUD Element ID
     aw.aw_int_set(428, 1)  # HUD Element Z
-    aw.aw_int_set(424, av_session)  # Session Information
+    aw.aw_int_set(424, session)  # Session Information
     aw.aw_int_set(427, location_y)  # HUD Element Y
     aw.aw_int_set(426, location_x)  # HUD Element X
     aw.aw_int_set(429, 0x0001)  # HUD_Element_Flags
@@ -37,6 +36,4 @@ def py_hud_generic(session, message, hud_id, hud_origin, location_x, location_y)
     aw.aw_int_set(431, 0xFFFF00)  # HUD COLOR
     aw.aw_float_set(432, c_float(1))
     aw.aw_hud_create()
-    rc = aw.aw_hud_create()
-    print rc
     return

@@ -42,7 +42,7 @@ class Character:
 
     def player_registration(self, player_session):
         player = session_dict[player_session]
-        print "Player Session {}".format(player_session)
+       #  print "Player Session {}".format(player_session)
 
         cursor.execute('''SELECT name FROM players WHERE name = ?''', (player,))
         player_exists = cursor.fetchone()
@@ -76,3 +76,67 @@ class Immortal(Character):
         self.race = "Immortal"
 
         return
+
+def add_to_inventory(item, player_session):
+    player_name = session_dict[player_session]
+    genericMessaging.py_console(player_session, "Added {} to your inventory, {}!" .format(item, player_name))
+    cursor.execute('''SELECT inventory FROM players WHERE name = ?''', (player_name,))
+    inventory_current_row = cursor.fetchone()
+    if inventory_current_row:
+        cursor.execute('''UPDATE players SET inventory = ? WHERE name = ?''', (item, player_name,))
+        db.commit()
+
+
+def stat_change(session, stat, amount):
+    target_session = session
+    player_name = session_dict[target_session]
+    # print "Modifying {}'s {} by {}" .format(player_name, stat, amount)
+    mana_addition = amount
+    target_stat = stat
+
+    if target_stat == "health":
+        cursor.execute('''SELECT health FROM players WHERE name = ?''', (player_name,))
+        health_current_row = cursor.fetchone()
+        if health_current_row:
+            health_current = health_current_row[0]
+            new_health = health_current + amount
+            cursor.execute('''UPDATE players SET health = ? WHERE name = ?''', (new_health, player_name,))
+            db.commit()
+            update_stats(session)
+            # print health_current
+        else:
+            pass
+
+    if target_stat == "mana":
+        cursor.execute('''SELECT mana FROM players WHERE name = ?''', (player_name,))
+        mana_current_row = cursor.fetchone()
+        if mana_current_row:
+            mana_current = mana_current_row[0]
+            new_mana = mana_current + mana_addition
+            cursor.execute('''UPDATE players SET mana = ? WHERE name = ?''', (new_mana, player_name,))
+            db.commit()
+            update_stats(session)
+            # print mana_current
+        else:
+            pass
+
+
+# Update the Stats HUD on demand
+def update_stats(player_session):
+    hud_id = 1000
+    player_name = session_dict[player_session]
+    hud_origin = 0
+    location_x = 0
+    location_y = 0
+    cursor.execute('''SELECT name, health, mana, race FROM players WHERE name = ?''', (player_name,))
+    results = cursor.fetchone()
+    if results is not None:
+        aw.aw_hud_destroy(player_session, hud_id)
+        health = results[1]
+        mana = results[2]
+        race = results[3]
+        genericMessaging.py_hud_generic(player_session, "Health: {}, Mana: {}, Race: {}".format(health, mana, race),
+                                        1000,
+                                        hud_origin, location_x, location_y)
+    else:
+        pass
