@@ -64,7 +64,6 @@ def list_current_users(player_session):
     for i in session_dict.itervalues():
         temp.append(i)
     genericMessaging.py_console(player_session, str(temp))
-    return
 
 
 def py_chat():
@@ -123,7 +122,6 @@ def py_hud_click():
     else:
         aw.aw_hud_destroy(session_number, hud_id)
 
-    return
 
 def py_avatar_click():
     av_session = aw.aw_int(206)
@@ -137,15 +135,11 @@ def py_avatar_click():
     if combat == 1:
         playerdata.damage_player(clicked_session)  # Damage the player who was clicked
         py_hud_damage(clicked_session)  # Activate that damage indicator HUD
-    else:
-        pass
 
-    return
 
 
 def py_hud_destroy(session, hud_id):
     aw.aw_hud_destroy(session, hud_id)
-    return
 
 
 def py_hud_damage(session):
@@ -162,7 +156,6 @@ def py_hud_damage(session):
     aw.aw_float_set(432, c_float(.8))
     aw.aw_hud_create()
     py_hud_destroy(session, 001)
-    return
 
 
 def py_object_bump():
@@ -209,7 +202,6 @@ def py_avatar_add():
 
     # Sends users a message when they first enter the world
     genericMessaging.py_console(player_session, "You've arrived inside Poseidon's lab. Expect chaos.")
-    return
 
 
 def py_avatar_delete():
