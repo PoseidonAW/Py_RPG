@@ -18,6 +18,7 @@ from random import randint
 session_dict = {}
 
 
+
 def player_check(player_session):
     player = session_dict[player_session]
 
@@ -90,35 +91,20 @@ def add_to_inventory(item, player_session):
 def stat_change(session, stat, amount):
     target_session = session
     player_name = session_dict[target_session]
-    # print "Modifying {}'s {} by {}" .format(player_name, stat, amount)
-    mana_addition = amount
-    target_stat = stat
 
-    if target_stat == "health":
-        cursor.execute('''SELECT health FROM players WHERE name = ?''', (player_name,))
-        health_current_row = cursor.fetchone()
-        if health_current_row:
-            health_current = health_current_row[0]
-            new_health = health_current + amount
-            cursor.execute('''UPDATE players SET health = ? WHERE name = ?''', (new_health, player_name,))
-            db.commit()
-            update_stats(session)
-            # print health_current
-        else:
-            pass
+    # Select the appropriate stat for the player
+    cursor.execute("SELECT %s FROM players where name=?" % (stat), (player_name,))
+    stat_current_row = cursor.fetchone()
+    if stat_current_row:
+        stat_current = stat_current_row[0]
+        stat_new = stat_current + amount
+        print stat_current
+        print stat_new
 
-    if target_stat == "mana":
-        cursor.execute('''SELECT mana FROM players WHERE name = ?''', (player_name,))
-        mana_current_row = cursor.fetchone()
-        if mana_current_row:
-            mana_current = mana_current_row[0]
-            new_mana = mana_current + mana_addition
-            cursor.execute('''UPDATE players SET mana = ? WHERE name = ?''', (new_mana, player_name,))
-            db.commit()
-            update_stats(session)
-            # print mana_current
-        else:
-            pass
+        # Update the player's appropriate stat by the given amount
+        cursor.execute('''UPDATE players SET %s = ? WHERE name = ?''' % (stat), (stat_new, player_name,))
+        db.commit()
+        update_stats(session)
 
 
 # Update the Stats HUD on demand
