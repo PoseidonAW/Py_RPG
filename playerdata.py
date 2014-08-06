@@ -66,9 +66,6 @@ class Character:
                                             hud_origin, location_x, location_y)
 
 
-        else:
-            return
-
 class Immortal(Character):
     def __init__(self):
         Character.__init__(self)
@@ -76,7 +73,6 @@ class Immortal(Character):
         self.health = 10000
         self.race = "Immortal"
 
-        return
 
 def add_to_inventory(item, player_session):
     player_name = session_dict[player_session]
@@ -98,8 +94,6 @@ def stat_change(session, stat, amount):
     if stat_current_row:
         stat_current = stat_current_row[0]
         stat_new = stat_current + amount
-        print stat_current
-        print stat_new
 
         # Update the player's appropriate stat by the given amount
         cursor.execute('''UPDATE players SET %s = ? WHERE name = ?''' % (stat), (stat_new, player_name,))
@@ -124,8 +118,7 @@ def update_stats(player_session):
         genericMessaging.py_hud_generic(player_session, "Health: {}, Mana: {}, Race: {}".format(health, mana, race),
                                         1000,
                                         hud_origin, location_x, location_y)
-    else:
-        pass
+
 
 
     # Handle player damage
@@ -146,5 +139,3 @@ def damage_player(clicked_session):
             amount = health_reduction
             # print "{} was attacked!" .format(player_name)
             stat_change(clicked_session, stat, amount)
-        else:
-            pass

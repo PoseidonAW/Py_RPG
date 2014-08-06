@@ -18,7 +18,7 @@ def py_console(session, message):
     aw.aw_string_set(334, message)
     # aw.aw_int_set(206, target_session)
     aw.aw_console_message(target_session)
-    return
+
 
 # A generic HUD message function. Call this inside of other functions as necessary
 def py_hud_generic(session, message, hud_id, hud_origin, location_x, location_y):
@@ -36,4 +36,4 @@ def py_hud_generic(session, message, hud_id, hud_origin, location_x, location_y)
     aw.aw_int_set(431, 0xFFFF00)  # HUD COLOR
     aw.aw_float_set(432, c_float(1))
     aw.aw_hud_create()
-    return
+
